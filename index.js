@@ -34,11 +34,21 @@ app.get('/users', async (req, res) => {
 });
 
 
-// app.get('/users/email/:email', async (req, res) => {
-//   const email = req.params.email;
-//   const user = await usersCollection.findOne({ email });
-//   res.send(user);
-// });
+app.get('/users/email/:email', async (req, res) => {
+  const email = req.params.email;
+
+  try {
+    const user = await usersCollection.findOne({ email });
+
+    if (!user) {
+      return res.status(404).send({ message: 'User not found' });
+    }
+
+    res.send(user);
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to fetch user' });
+  }
+});
 
 
 
