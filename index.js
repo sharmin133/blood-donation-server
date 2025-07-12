@@ -43,7 +43,6 @@ app.get('/users/email/:email', async (req, res) => {
     if (!user) {
       return res.status(404).send({ message: 'User not found' });
     }
-
     res.send(user);
   } catch (error) {
     res.status(500).send({ error: 'Failed to fetch user' });
