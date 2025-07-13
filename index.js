@@ -24,6 +24,7 @@ async function run() {
 const db = client.db("redHopeDB");
 const usersCollection = db.collection("users");
 const donationRequestCollection = db.collection("donationRequests");
+const blogsCollection = db.collection("blogs");
 
 
 
@@ -190,6 +191,30 @@ app.get('/donation-requests/requester/:email', async (req, res) => {
   }
 });
 
+
+
+//blog added
+
+
+// Get all blogs
+app.get('/blogs', async (req, res) => {
+  try {
+    const blogs = await blogsCollection.find().toArray();
+    res.send(blogs);
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to fetch blogs' });
+  }
+});
+
+app.post('/blogs', async (req, res) => {
+  try {
+    const blog = req.body;
+    const result = await blogsCollection.insertOne(blog);
+    res.send({ message: 'Blog added', insertedId: result.insertedId });
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to save blog' });
+  }
+});
 
 //view donar all request
 
