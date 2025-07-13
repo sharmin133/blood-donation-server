@@ -87,6 +87,17 @@ app.put('/users/:id', async (req, res) => {
 
 //donar all operation 
 
+app.get('/donation-requests', async (req, res) => {
+  try {
+    const donationRequests = await donationRequestCollection.find({}).toArray();
+    res.send(donationRequests);
+  } catch (error) {
+    console.error('Failed to fetch donation requests:', error);
+    res.status(500).send({ error: 'Failed to fetch donation requests' });
+  }
+});
+
+
 app.post('/donation-requests', async (req, res) => {
   try {
     const donationRequest = req.body;
