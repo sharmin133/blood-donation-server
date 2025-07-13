@@ -23,6 +23,9 @@ async function run() {
     await client.connect();
 const db = client.db("redHopeDB");
 const usersCollection = db.collection("users");
+const donationRequestCollection = db.collection("donationRequests");
+
+
 
 app.get('/users', async (req, res) => {
   try {
@@ -64,9 +67,6 @@ app.post('/users', async (req, res) => {
     });
 
 
-
-
-
 app.put('/users/:id', async (req, res) => {
   const { id } = req.params;
   const updatedData = req.body;
@@ -82,6 +82,44 @@ app.put('/users/:id', async (req, res) => {
     res.status(500).send({ error: 'Failed to update user profile' });
   }
 });
+
+
+
+//donar all operation 
+
+app.post('/donation-requests', async (req, res) => {
+  try {
+    const donationRequest = req.body;
+
+    // 1. Check if requester email exists in users collection and is active
+    const user = await usersCollection.findOne({ email: donationRequest.requesterEmail });
+
+    if (!user) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    if (user.status !== 'active') {
+      return res.status(403).send({ error: "Blocked users cannot create donation requests" });
+    }
+
+    // 2. Add createdAt timestamp and default status 'pending'
+    donationRequest.createdAt = new Date();
+    donationRequest.status = 'pending';  // Ensure status is set to pending by default
+
+    // 3. Insert donation request
+    const result = await donationRequestCollection.insertOne(donationRequest);
+
+    res.status(201).send({ insertedId: result.insertedId, message: "Donation request created" });
+
+  } catch (error) {
+    console.error("Error creating donation request:", error);
+    res.status(500).send({ error: "Failed to create donation request" });
+  }
+});
+
+
+
+
 
   } finally {
    
