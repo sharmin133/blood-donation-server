@@ -85,6 +85,52 @@ app.put('/users/:id', async (req, res) => {
 
 
 
+// PATCH /users/:id - Update user status or role
+app.patch('/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  try {
+    const result = await usersCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateData }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).send({ message: 'User not found or no changes made.' });
+    }
+
+    res.send({ message: 'User updated successfully', result });
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to update user.' });
+  }
+});
+
+//admin dashboard
+
+
+// Get total users
+app.get('/stats/users', async (req, res) => {
+  const count = await usersCollection.countDocuments();
+  res.send({ totalUsers: count });
+});
+
+// Get total blood donation requests
+app.get('/stats/donation-requests', async (req, res) => {
+  const count = await donationRequestCollection.countDocuments();
+  res.send({ totalRequests: count });
+});
+
+//  Get total funding amount
+app.get('/stats/funding', async (req, res) => {
+  const fundingCollection = db.collection("funding"); // If you have a funding collection
+  const all = await fundingCollection.find({}).toArray();
+  const total = all.reduce((acc, cur) => acc + (cur.amount || 0), 0);
+  res.send({ totalFunding: total });
+});
+
+
+
 //donar all operation 
 
 app.get('/donation-requests', async (req, res) => {
