@@ -130,6 +130,54 @@ app.post('/donation-requests', async (req, res) => {
 
 
 
+// Get all donation requests made by a user (by requester email)
+app.get('/donation-requests/requester/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    const result = await donationRequestCollection
+      .find({ requesterEmail: email })
+      .sort({ createdAt: -1 })
+      .toArray();
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to fetch donation requests' });
+  }
+});
+
+
+//view donar all request
+
+
+
+
+// Get a single donation request by ID
+app.get('/donation-requests/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const request = await donationRequestCollection.findOne({ _id: new ObjectId(id) });
+    res.send(request);
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to fetch donation request' });
+  }
+});
+
+
+// Keep only PATCH for all update operations
+app.patch('/donation-requests/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updateData = req.body;
+
+    const result = await donationRequestCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateData }
+    );
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to update donation request.' });
+  }
+});
 
 
   } finally {
