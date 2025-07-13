@@ -216,6 +216,34 @@ app.post('/blogs', async (req, res) => {
   }
 });
 
+
+// PATCH - Update blog status
+app.patch('/blogs/:id', async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  try {
+    const result = await blogsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateData }
+    );
+    res.send({ message: "Blog updated", result });
+  } catch (err) {
+    res.status(500).send({ error: 'Failed to update blog' });
+  }
+});
+
+// DELETE - Delete blog
+app.delete('/blogs/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await blogsCollection.deleteOne({ _id: new ObjectId(id) });
+    res.send({ message: "Blog deleted", result });
+  } catch (err) {
+    res.status(500).send({ error: 'Failed to delete blog' });
+  }
+});
+
+
 //view donar all request
 
 
