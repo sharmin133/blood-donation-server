@@ -4,9 +4,12 @@ const app = express()
 require('dotenv').config();
 const port =process.env.PORT|| 3000
 
+// const stripe = require('stripe')('YOUR_SECRET_STRIPE_KEY');
 app.use(cors())
 app.use(express.json())
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+
+
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.1ipyx2m.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -25,7 +28,7 @@ const db = client.db("redHopeDB");
 const usersCollection = db.collection("users");
 const donationRequestCollection = db.collection("donationRequests");
 const blogsCollection = db.collection("blogs");
-
+const fundsCollection = db.collection("funding")
 
 
 app.get('/users', async (req, res) => {
@@ -199,12 +202,31 @@ app.get('/donation-requests/requester/:email', async (req, res) => {
 // Get all blogs
 app.get('/blogs', async (req, res) => {
   try {
-    const blogs = await blogsCollection.find().toArray();
+    const status = req.query.status;
+    let query = {};
+    
+    if (status === 'published') {
+      query.status = 'published';
+    }
+
+    const blogs = await blogsCollection.find(query).sort({ createdAt: -1 }).toArray();
     res.send(blogs);
   } catch (error) {
     res.status(500).send({ error: 'Failed to fetch blogs' });
   }
 });
+
+
+app.get('/blogs/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const blog = await blogsCollection.findOne({ _id: new ObjectId(id) });
+    res.send(blog);
+  } catch (err) {
+    res.status(500).send({ error: 'Failed to fetch blog' });
+  }
+});
+
 
 app.post('/blogs', async (req, res) => {
   try {
@@ -276,6 +298,57 @@ app.patch('/donation-requests/:id', async (req, res) => {
   } catch (error) {
     res.status(500).send({ error: 'Failed to update donation request.' });
   }
+});
+
+
+
+
+
+
+
+
+
+//Funding
+
+
+// POST: When user gives fund via Stripe webhook
+app.post('/fundings', async (req, res) => {
+  const { name, email, amount, date } = req.body;
+  await fundsCollection.insertOne({ name, email, amount, date });
+  res.send({ success: true });
+});
+
+// GET: To show all fundings
+app.get('/fundings', async (req, res) => {
+  const data = await fundsCollection.find().sort({ date: -1 }).toArray();
+  res.send(data);
+});
+
+
+
+app.post('/create-checkout-session', async (req, res) => {
+  const { name, email } = req.body;
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: [{
+      price_data: {
+        currency: 'usd',
+        product_data: { name: 'Blood Donation Fund' },
+        unit_amount: 1000, // $10
+      },
+      quantity: 1,
+    }],
+    mode: 'payment',
+    success_url: 'http://localhost:5173/funding-success',
+    cancel_url: 'http://localhost:5173/funding-cancel',
+    metadata: {
+      name,
+      email
+    }
+  });
+
+  res.json({ id: session.id });
 });
 
 
