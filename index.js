@@ -3,14 +3,40 @@ const cors=require('cors')
 const app = express()
 require('dotenv').config();
 const port =process.env.PORT|| 3000
-
+const admin = require("firebase-admin");
+const decoded=Buffer.from(process.env.FB_SERVICE_KEY,'base64').toString('utf8')
+ const serviceAccount = JSON.parse(decoded)
 const stripe = require('stripe')(process.env.PAYMENT_GATEWAY_KEY);
-app.use(cors())
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
+
+
 app.use(express.json())
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
+const verifyFirebaseToken = async (req, res, next) => {
+  const authHeader = req.headers?.authorization;
+  if (!authHeader|| !authHeader.startsWith('Bearer ')){ return res.status(401).send({ message: 'Unauthorized Access.' });
+  }
+  const token = authHeader.split(' ')[1];
 
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+     console.log('decoded token',decoded)
+    req.decoded = decoded; 
+  
+     next();
+  } catch (error) {
+    return res.status(401).send({ message: 'Unauthorized Access.' });
+  }
+  console.log('token in the middleware',token)
 
+};
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.1ipyx2m.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -151,8 +177,6 @@ app.get('/donation-requests', async (req, res) => {
 app.post('/donation-requests', async (req, res) => {
   try {
     const donationRequest = req.body;
-
-    // 1. Check if requester email exists in users collection and is active
     const user = await usersCollection.findOne({ email: donationRequest.requesterEmail });
 
     if (!user) {
@@ -163,11 +187,9 @@ app.post('/donation-requests', async (req, res) => {
       return res.status(403).send({ error: "Blocked users cannot create donation requests" });
     }
 
-    // 2. Add createdAt timestamp and default status 'pending'
     donationRequest.createdAt = new Date();
-    donationRequest.status = 'pending';  // Ensure status is set to pending by default
+    donationRequest.status = 'pending'; 
 
-    // 3. Insert donation request
     const result = await donationRequestCollection.insertOne(donationRequest);
 
     res.status(201).send({ insertedId: result.insertedId, message: "Donation request created" });
@@ -299,13 +321,6 @@ app.patch('/donation-requests/:id', async (req, res) => {
     res.status(500).send({ error: 'Failed to update donation request.' });
   }
 });
-
-
-
-
-
-
-
 
 
 //Funding
