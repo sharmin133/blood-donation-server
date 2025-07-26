@@ -4,7 +4,7 @@ const app = express()
 require('dotenv').config();
 const port =process.env.PORT|| 3000
 
-// const stripe = require('stripe')('YOUR_SECRET_STRIPE_KEY');
+const stripe = require('stripe')(process.env.PAYMENT_GATEWAY_KEY);
 app.use(cors())
 app.use(express.json())
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -310,47 +310,45 @@ app.patch('/donation-requests/:id', async (req, res) => {
 
 //Funding
 
-
-// POST: When user gives fund via Stripe webhook
-app.post('/fundings', async (req, res) => {
-  const { name, email, amount, date } = req.body;
-  await fundsCollection.insertOne({ name, email, amount, date });
-  res.send({ success: true });
-});
-
-// GET: To show all fundings
-app.get('/fundings', async (req, res) => {
-  const data = await fundsCollection.find().sort({ date: -1 }).toArray();
-  res.send(data);
+app.get('/funds', async (req, res) => { 
+  try {
+    const funds = await fundsCollection.find().sort({ createdAt: -1 }).toArray();
+    res.json(funds);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 
-
-app.post('/create-checkout-session', async (req, res) => {
-  const { name, email } = req.body;
-
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [{
-      price_data: {
-        currency: 'usd',
-        product_data: { name: 'Blood Donation Fund' },
-        unit_amount: 1000, // $10
-      },
-      quantity: 1,
-    }],
-    mode: 'payment',
-    success_url: 'http://localhost:5173/funding-success',
-    cancel_url: 'http://localhost:5173/funding-cancel',
-    metadata: {
+app.post('/save-fund', async (req, res) => {
+  try {
+    const { userId, name, amount } = req.body;
+    const newFund = {
+      userId,
       name,
-      email
-    }
-  });
-
-  res.json({ id: session.id });
+      amount,
+      createdAt: new Date(),
+    };
+    const result = await fundsCollection.insertOne(newFund);
+    res.json({ success: true, fundId: result.insertedId });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
+
+app.post('/create-payment', async (req, res) => {
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: req.body.amount,  // amount in cents
+      currency: 'usd',
+      payment_method_types: ['card'],
+    });
+    res.json({ clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
   } finally {
    
