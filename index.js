@@ -200,8 +200,6 @@ app.post('/donation-requests', async (req, res) => {
   }
 });
 
-
-
 // Get all donation requests made by a user (by requester email)
 app.get('/donation-requests/requester/:email', async (req, res) => {
   try {
