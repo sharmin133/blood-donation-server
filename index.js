@@ -8,7 +8,7 @@ const decoded=Buffer.from(process.env.FB_SERVICE_KEY,'base64').toString('utf8')
  const serviceAccount = JSON.parse(decoded)
 const stripe = require('stripe')(process.env.PAYMENT_GATEWAY_KEY);
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin:'https://redhope-1ec3a.web.app',
   credentials: true
 }));
 
