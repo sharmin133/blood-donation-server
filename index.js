@@ -333,6 +333,25 @@ app.get('/funds', async (req, res) => {
 });
 
 
+app.get('/funds/by-user', async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'Missing userId query parameter' });
+    }
+
+    const userFunds = await fundsCollection
+      .find({ userId }) 
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.json(userFunds);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/save-fund', async (req, res) => {
   try {
     const { userId, name, amount } = req.body;
