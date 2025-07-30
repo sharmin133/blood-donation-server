@@ -3,40 +3,38 @@ const cors=require('cors')
 const app = express()
 require('dotenv').config();
 const port =process.env.PORT|| 3000
-const admin = require("firebase-admin");
-const decoded=Buffer.from(process.env.FB_SERVICE_KEY,'base64').toString('utf8')
- const serviceAccount = JSON.parse(decoded)
+// const admin = require("firebase-admin");
+// const decoded=Buffer.from(process.env.FB_SERVICE_KEY,'base64').toString('utf8')
+//  const serviceAccount = JSON.parse(decoded)
 const stripe = require('stripe')(process.env.PAYMENT_GATEWAY_KEY);
-app.use(cors({
-  origin:'https://redhope-1ec3a.web.app',
-  credentials: true
-}));
+app.use(cors());
+
 
 
 app.use(express.json())
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount)
+// });
 
-const verifyFirebaseToken = async (req, res, next) => {
-  const authHeader = req.headers?.authorization;
-  if (!authHeader|| !authHeader.startsWith('Bearer ')){ return res.status(401).send({ message: 'Unauthorized Access.' });
-  }
-  const token = authHeader.split(' ')[1];
+// const verifyFirebaseToken = async (req, res, next) => {
+//   const authHeader = req.headers?.authorization;
+//   if (!authHeader|| !authHeader.startsWith('Bearer ')){ return res.status(401).send({ message: 'Unauthorized Access.' });
+//   }
+//   const token = authHeader.split(' ')[1];
 
-  try {
-    const decoded = await admin.auth().verifyIdToken(token);
-     console.log('decoded token',decoded)
-    req.decoded = decoded; 
+//   try {
+//     const decoded = await admin.auth().verifyIdToken(token);
+//      console.log('decoded token',decoded)
+//     req.decoded = decoded; 
   
-     next();
-  } catch (error) {
-    return res.status(401).send({ message: 'Unauthorized Access.' });
-  }
-  console.log('token in the middleware',token)
+//      next();
+//   } catch (error) {
+//     return res.status(401).send({ message: 'Unauthorized Access.' });
+//   }
+//   console.log('token in the middleware',token)
 
-};
+// };
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.1ipyx2m.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -49,7 +47,6 @@ const client = new MongoClient(uri, {
 });
 async function run() {
   try {
-    await client.connect();
 const db = client.db("redHopeDB");
 const usersCollection = db.collection("users");
 const donationRequestCollection = db.collection("donationRequests");
@@ -138,7 +135,6 @@ app.patch('/users/:id', async (req, res) => {
 
 //admin dashboard
 
-
 // Get total users
 app.get('/stats/users', async (req, res) => {
   const count = await usersCollection.countDocuments();
@@ -172,6 +168,7 @@ app.get('/donation-requests', async (req, res) => {
     res.status(500).send({ error: 'Failed to fetch donation requests' });
   }
 });
+
 
 
 app.post('/donation-requests', async (req, res) => {
@@ -319,6 +316,7 @@ app.patch('/donation-requests/:id', async (req, res) => {
     res.status(500).send({ error: 'Failed to update donation request.' });
   }
 });
+
 
 
 //Funding
