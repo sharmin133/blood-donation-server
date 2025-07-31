@@ -45,6 +45,9 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+//added all
+
 async function run() {
   try {
 const db = client.db("redHopeDB");
