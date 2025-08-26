@@ -54,6 +54,7 @@ const db = client.db("redHopeDB");
 const usersCollection = db.collection("users");
 const donationRequestCollection = db.collection("donationRequests");
 const blogsCollection = db.collection("blogs");
+const reviewCollection = db.collection("reviews");
 const fundsCollection = db.collection("funding")
 
 
@@ -81,8 +82,6 @@ app.get('/users/email/:email', async (req, res) => {
     res.status(500).send({ error: 'Failed to fetch user' });
   }
 });
-
-
 
 app.post('/users', async (req, res) => {
       const user = req.body;
@@ -113,6 +112,20 @@ app.put('/users/:id', async (req, res) => {
   }
 });
 
+
+// GET single user by ID
+app.get("/users/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ObjectId = require("mongodb").ObjectId;
+    const user = await db.collection("users").findOne({ _id: new ObjectId(id) });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch user" });
+  }
+});
 
 
 // PATCH /users/:id - Update user status or role
@@ -382,6 +395,28 @@ app.post('/create-payment', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+//review All
+
+  app.post("/reviews", async (req, res) => {
+    try {
+      const result = await reviewCollection.insertOne(req.body);
+      res.status(201).json(result);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to save review" });
+    }
+  });
+
+
+   // ✅ Get all reviews (for admin)
+  app.get("/reviews", async (req, res) => {
+    try {
+      const reviews = await reviewCollection.find().sort({ createdAt: -1 }).toArray();
+      res.json(reviews);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch reviews" });
+    }
+  });
 
   } finally {
    
